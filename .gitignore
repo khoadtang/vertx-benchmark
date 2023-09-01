@@ -1,0 +1,35 @@
+# Exclude the .vscode folder
+.vscode/
+
+# Maven generated files and directories
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/extensions.xml
+
+# IDE-specific files
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Compiled class file
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# Maven Wrapper
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
