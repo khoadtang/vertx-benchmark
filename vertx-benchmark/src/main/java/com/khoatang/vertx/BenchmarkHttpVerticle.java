@@ -30,10 +30,10 @@ public class BenchmarkHttpVerticle extends AbstractVerticle {
         HttpServer server = vertx.createHttpServer();
         Router router = Router.router(vertx);
 
-        router.get("/fetch").handler(this::fetchData);
+        router.get("/vertx/fetch").handler(this::fetchData);
         server.requestHandler(router).listen(8080, ar -> {
             if (ar.succeeded()) {
-                System.out.println("Server is now listening!");
+                System.out.println("Server is now listening on port 8080!");
             } else {
                 System.out.println("Failed to bind!");
             }

@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -16,8 +17,32 @@ type Profile struct {
 }
 
 func main() {
-	http.HandleFunc("/profiles", fetchProfiles)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	http.HandleFunc("/go/fetch", fetchProfiles)
+
+	done := make(chan bool)
+
+	go func() {
+		// Start the HTTP server
+		if err := http.ListenAndServe(":8080", nil); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	// Trigger the callback once the server starts listening
+	go func() {
+		_, err := http.Get("http://localhost:8080") // Replace with your server URL
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Server started listening on port 8080")
+		// Perform any additional actions or logic here
+		done <- true
+	}()
+
+	<-done // Wait for the callback to complete
+
+	// Keep the main goroutine alive
+	select {}
 }
 
 func fetchProfiles(w http.ResponseWriter, r *http.Request) {
