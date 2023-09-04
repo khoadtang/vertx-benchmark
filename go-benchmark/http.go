@@ -1,13 +1,15 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
-	_ "github.com/lib/pq"
+	"os"
+	"runtime/pprof"
+
+	"github.com/go-pg/pg/v10"
 )
 
 type Profile struct {
@@ -17,7 +19,37 @@ type Profile struct {
 }
 
 func main() {
-	http.HandleFunc("/go/fetch", fetchProfiles)
+	// Enable CPU profiling
+	f, err := os.Create("cpu.prof")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+
+	// Enable memory profiling
+	m, err := os.Create("mem.prof")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer m.Close()
+	defer pprof.WriteHeapProfile(m)
+
+	// Create a connection pool with a maximum of 10 connections
+	opt := &pg.Options{
+		Addr:     "localhost:5432",
+		User:     "go",
+		Password: "go",
+		Database: "benchmark",
+		PoolSize: 5, // Set the maximum number of connections to 10
+	}
+	db := pg.Connect(opt)
+	defer db.Close()
+
+	http.HandleFunc("/go/fetch", func(w http.ResponseWriter, r *http.Request) {
+		fetchProfiles(w, r, db)
+	})
 
 	done := make(chan bool)
 
@@ -45,36 +77,10 @@ func main() {
 	select {}
 }
 
-func fetchProfiles(w http.ResponseWriter, r *http.Request) {
-	// Connect to the PostgreSQL database
-	db, err := sql.Open("postgres", "postgres://go:go@localhost:5432/benchmark?sslmode=disable")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
+func fetchProfiles(w http.ResponseWriter, r *http.Request, db *pg.DB) {
 	// Query all rows from the profile table
-	rows, err := db.Query("SELECT id, name, age FROM profile")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-
-	// Create a slice to hold the profiles
-	profiles := []Profile{}
-
-	// Iterate over the rows and populate the profiles slice
-	for rows.Next() {
-		var profile Profile
-		err := rows.Scan(&profile.ID, &profile.Name, &profile.Age)
-		if err != nil {
-			log.Fatal(err)
-		}
-		profiles = append(profiles, profile)
-	}
-
-	// Check for any errors during iteration
-	err = rows.Err()
+	var profiles []Profile
+	_, err := db.Query(&profiles, "SELECT * FROM profile")
 	if err != nil {
 		log.Fatal(err)
 	}
