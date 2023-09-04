@@ -6,9 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"os"
-	"runtime/pprof"
-
 	"github.com/go-pg/pg/v10"
 )
 
@@ -19,22 +16,6 @@ type Profile struct {
 }
 
 func main() {
-	// Enable CPU profiling
-	// Enable CPU profiling
-	cpuFile, err := os.Create("cpu.prof")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer cpuFile.Close()
-	pprof.StartCPUProfile(cpuFile)
-	defer pprof.StopCPUProfile()
-
-	// Enable memory profiling
-	memFile, err := os.Create("mem.prof")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer memFile.Close()
 
 	// Create a connection pool with a maximum of 10 connections
 	opt := &pg.Options{
@@ -48,9 +29,6 @@ func main() {
 	defer db.Close()
 
 	http.HandleFunc("/go/fetch", func(w http.ResponseWriter, r *http.Request) {
-		// Capture CPU and memory profiles for each request
-		pprof.WriteHeapProfile(memFile)
-
 		fetchProfiles(w, r, db)
 	})
 
