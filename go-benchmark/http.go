@@ -20,21 +20,21 @@ type Profile struct {
 
 func main() {
 	// Enable CPU profiling
-	f, err := os.Create("cpu.prof")
+	// Enable CPU profiling
+	cpuFile, err := os.Create("cpu.prof")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer f.Close()
-	pprof.StartCPUProfile(f)
+	defer cpuFile.Close()
+	pprof.StartCPUProfile(cpuFile)
 	defer pprof.StopCPUProfile()
 
 	// Enable memory profiling
-	m, err := os.Create("mem.prof")
+	memFile, err := os.Create("mem.prof")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer m.Close()
-	defer pprof.WriteHeapProfile(m)
+	defer memFile.Close()
 
 	// Create a connection pool with a maximum of 10 connections
 	opt := &pg.Options{
@@ -48,6 +48,9 @@ func main() {
 	defer db.Close()
 
 	http.HandleFunc("/go/fetch", func(w http.ResponseWriter, r *http.Request) {
+		// Capture CPU and memory profiles for each request
+		pprof.WriteHeapProfile(memFile)
+
 		fetchProfiles(w, r, db)
 	})
 
